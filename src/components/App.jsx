@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { nanoid } from 'nanoid';
 import { Box } from './reusableComponents';
 import ContactsInput from './ContactsInput';
@@ -6,24 +6,26 @@ import ContactsList from './ContactsList';
 import Filter from './Filter';
 import storage from '../Services';
 
-export class App extends Component {
-  state = { contacts: [], filter: '' };
+export function App() {
+  const [contacts, setContacts] = useState([]);
+  const [filter, setFilter] = useState('');
 
-  componentDidMount() {
-    const savedContacts = storage.get('contacts');
-    this.setState({ contacts: [...savedContacts] });
-  }
+  const savedContacts = useRef(storage.get('contacts') ?? []);
+  const isFirstRender = useRef(true);
 
-  componentDidUpdate(prevProps, prevState) {
-    const currentContacts = this.state.contacts;
-    const prevContacts = prevState.contacts;
-    if (prevContacts !== currentContacts) {
-      storage.update('contacts', [...currentContacts]);
+  useEffect(() => {
+    setContacts(savedContacts.current);
+  }, []);
+
+  useEffect(() => {
+    if (!isFirstRender.current) {
+      storage.update('contacts', contacts);
     }
-  }
+    isFirstRender.current = false;
+  }, [contacts]);
 
-  onFormSubmit = ({ name, number }) => {
-    const isInContacts = this.state.contacts.some(contact => {
+  const onFormSubmit = ({ name, number }) => {
+    const isInContacts = contacts.some(contact => {
       const existName = contact.name.toLowerCase();
       const newName = name.toLowerCase();
       return existName === newName;
@@ -37,46 +39,34 @@ export class App extends Component {
       number,
       id: nanoid(),
     };
-    this.setState(prevState => {
-      const currentContacts = prevState.contacts;
-      return { contacts: [...currentContacts, newContact] };
-    });
+    setContacts(contacts => [...contacts, newContact]);
   };
 
-  onContactDelete = contactId => {
-    this.setState(prevState => {
-      const currentContacts = prevState.contacts;
-      return {
-        contacts: currentContacts.filter(({ id }) => id !== contactId),
-      };
-    });
+  const onContactDelete = contactId => {
+    setContacts(contacts => contacts.filter(({ id }) => id !== contactId));
   };
 
-  onFilterChange = query => {
-    this.setState({ filter: query.toLowerCase() });
+  const onFilterChange = query => {
+    setFilter(query.toLowerCase());
   };
 
-  render() {
-    const { onFormSubmit, onContactDelete, onFilterChange } = this;
-    const { filter: filterValue, contacts } = this.state;
-    const filteredContacts = contacts.filter(
-      ({ name, number }) =>
-        name.toLowerCase().includes(filterValue) || number.includes(filterValue)
-    );
-    return (
-      <Box border="1px solid black" width="300px" mt="15px" ml="15px" p="4px">
-        <h1>Phonebook</h1>
-        <ContactsInput onFormSubmit={onFormSubmit} />
-        {!!contacts.length && (
-          <>
-            <Filter onFilterChange={onFilterChange} value={filterValue} />
-            <ContactsList
-              contacts={filteredContacts}
-              onContactDelete={onContactDelete}
-            />
-          </>
-        )}
-      </Box>
-    );
-  }
+  const filteredContacts = contacts.filter(
+    ({ name, number }) =>
+      name.toLowerCase().includes(filter) || number.includes(filter)
+  );
+  return (
+    <Box border="1px solid black" width="300px" mt="15px" ml="15px" p="4px">
+      <h1>Phonebook</h1>
+      <ContactsInput onFormSubmit={onFormSubmit} />
+      {!!contacts.length && (
+        <>
+          <Filter onFilterChange={onFilterChange} value={filter} />
+          <ContactsList
+            contacts={filteredContacts}
+            onContactDelete={onContactDelete}
+          />
+        </>
+      )}
+    </Box>
+  );
 }
