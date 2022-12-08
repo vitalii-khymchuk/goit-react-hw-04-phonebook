@@ -7,15 +7,10 @@ import Filter from './Filter';
 import storage from '../Services';
 
 export function App() {
-  const [contacts, setContacts] = useState([]);
+  const [contacts, setContacts] = useState(() => storage.get('contacts'));
   const [filter, setFilter] = useState('');
 
-  const savedContacts = useRef(storage.get('contacts') ?? []);
   const isFirstRender = useRef(true);
-
-  useEffect(() => {
-    setContacts(savedContacts.current);
-  }, []);
 
   useEffect(() => {
     if (!isFirstRender.current) {

@@ -37,9 +37,9 @@ export default function ContactsInput({ onFormSubmit }) {
     number: '',
   };
 
-  const onSubmit = (values, actions) => {
-    onFormSubmit(values);
-    actions.resetForm();
+  const onSubmit = (values, { resetForm }) => {
+    onFormSubmit({ ...values });
+    resetForm();
   };
 
   return (
